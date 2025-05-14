@@ -14,7 +14,7 @@ public class ClimbLadder : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Player")) { isCliming = false; }
     }
-    public bool getisCliming()
+    public bool GetIsClimbing()
     {
         return isCliming;
     }

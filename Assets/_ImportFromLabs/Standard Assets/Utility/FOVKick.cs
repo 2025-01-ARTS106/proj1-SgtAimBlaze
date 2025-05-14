@@ -59,14 +59,13 @@ namespace UnityStandardAssets.Utility
 
         public IEnumerator FOVKickDown()
         {
-            float t = Mathf.Abs((Camera.fieldOfView - originalFov)/FOVIncrease);
-            while (t > 0)
+            float t = 0f;
+            while (t < TimeToDecrease)
             {
-                Camera.fieldOfView = originalFov + (IncreaseCurve.Evaluate(t/TimeToDecrease)*FOVIncrease);
-                t -= Time.deltaTime;
+                Camera.fieldOfView = originalFov + (IncreaseCurve.Evaluate(1 - (t / TimeToDecrease)) * FOVIncrease);
+                t += Time.deltaTime;
                 yield return new WaitForEndOfFrame();
             }
-            //make sure that fov returns to the original size
             Camera.fieldOfView = originalFov;
         }
     }

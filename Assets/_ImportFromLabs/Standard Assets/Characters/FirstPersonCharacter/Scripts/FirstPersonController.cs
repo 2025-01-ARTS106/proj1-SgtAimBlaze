@@ -41,6 +41,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private float m_NextStep;
         private bool m_Jumping;
         private AudioSource m_AudioSource;
+        private ClimbLadder climbLadderZone;
 
         // Use this for initialization
         private void Start()
@@ -65,7 +66,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             // the jump state needs to read here to make sure it is not missed
             if (!m_Jump)
             {
-                m_Jump = CrossPlatformInputManager.GetButtonDown("Jump");
+                //m_Jump = CrossPlatformInputManager.GetButtonDown("Jump");
             }
 
             if (!m_PreviouslyGrounded && m_CharacterController.isGrounded)
@@ -83,6 +84,21 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_PreviouslyGrounded = m_CharacterController.isGrounded;
         }
 
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.GetComponent<ClimbLadder>() != null)
+            {
+                climbLadderZone = other.gameObject.GetComponent<ClimbLadder>();
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.gameObject.GetComponent<ClimbLadder>() != null)
+            {
+                climbLadderZone = null;
+            }
+        }
 
         private void PlayLandingSound()
         {
@@ -109,22 +125,35 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_MoveDir.z = desiredMove.z*speed;
 
 
-            if (m_CharacterController.isGrounded)
+            if (climbLadderZone != null && climbLadderZone.GetIsClimbing())
             {
-                m_MoveDir.y = -m_StickToGroundForce;
+                // Use vertical input to move up/down the ladder
+                float climbInput = CrossPlatformInputManager.GetAxis("Vertical");
+                m_MoveDir = new Vector3(0f, climbInput * m_WalkSpeed, 0f);
 
-                if (m_Jump)
-                {
-                    m_MoveDir.y = m_JumpSpeed;
-                    PlayJumpSound();
-                    m_Jump = false;
-                    m_Jumping = true;
-                }
+
+                // Disable gravity effect while climbing
             }
             else
             {
-                m_MoveDir += Physics.gravity*m_GravityMultiplier*Time.fixedDeltaTime;
+                if (m_CharacterController.isGrounded)
+                {
+                    m_MoveDir.y = -m_StickToGroundForce;
+
+                    if (m_Jump)
+                    {
+                        m_MoveDir.y = m_JumpSpeed;
+                        PlayJumpSound();
+                        m_Jump = false;
+                        m_Jumping = true;
+                    }
+                }
+                else
+                {
+                    m_MoveDir += Physics.gravity * m_GravityMultiplier * Time.fixedDeltaTime;
+                }
             }
+
             m_CollisionFlags = m_CharacterController.Move(m_MoveDir*Time.fixedDeltaTime);
 
             ProgressStepCycle(speed);
@@ -229,9 +258,17 @@ namespace UnityStandardAssets.Characters.FirstPerson
             if (m_IsWalking != waswalking && m_UseFovKick && m_CharacterController.velocity.sqrMagnitude > 0)
             {
                 StopAllCoroutines();
-                StartCoroutine(!m_IsWalking ? m_FovKick.FOVKickUp() : m_FovKick.FOVKickDown());
+                if (m_IsWalking)
+                {
+                    StartCoroutine(m_FovKick.FOVKickDown()); // Decrease FOV immediately when shifting to walk
+                }
+                else
+                {
+                    StartCoroutine(m_FovKick.FOVKickUp());   // Increase FOV immediately when shifting to run
+                }
             }
         }
+
 
 
         private void RotateView()
