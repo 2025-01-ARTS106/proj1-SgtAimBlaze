@@ -58,12 +58,19 @@ namespace UnityStandardAssets.Characters.FirstPerson
         public void SetCursorLock(bool value)
         {
             lockCursor = value;
-            if(!lockCursor)
-            {//we force unlock the cursor if the user disable the cursor locking helper
+
+            if (lockCursor)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            else
+            {
                 Cursor.lockState = CursorLockMode.None;
                 Cursor.visible = true;
             }
         }
+
 
         public void UpdateCursorLock()
         {
